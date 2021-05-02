@@ -79,19 +79,18 @@ Public Sub removeTudo(objForm As Object)
 End Sub
 
 Public Sub removeCaption(objForm As Object)
-    Dim lngMyHandle As Long, lngCurrentStyle As Long, lngNewStyle As Long
-    If Val(Application.Version) < 9 Then
-        lngMyHandle = FindWindowA("ThunderXFrame", objForm.Caption)
-    Else
-        lngMyHandle = FindWindowA("ThunderDFrame", objForm.Caption)
-    End If
-
-    MeuForm = FindWindowA(vbNullString, objForm.Caption)
-    STYLE_FORM = STYLE_FORM Or &HDC47BE '&HDCCEBE
-    MoveJanela MeuForm, ESTILO_ATUAL, (STYLE_FORM)
-    
-    lngCurrentStyle = GetWindowLong(lngMyHandle, GWL_STYLE)
-    lngNewStyle = lngCurrentStyle Or WS_MINIMIZEBOX Or WS_MAXIMIZEBOX
-    SetWindowLong lngMyHandle, GWL_STYLE, lngNewStyle
+    'Hide title bar and border around userform
+    Dim lngWindow As Long
+    Dim lFrmHdl As Long
+    lFrmHdl = FindWindowA(vbNullString, frm.Caption)
+'    'Build window and set window until you remove the caption, title bar and frame around the window
+    lngWindow = GetWindowLong(lFrmHdl, GWL_STYLE)
+    lngWindow = lngWindow Or WS_CAPTION
+    SetWindowLong lFrmHdl, GWL_STYLE, lngWindow
+    lngWindow = GetWindowLong(lFrmHdl, GWL_EXSTYLE)
+    lngWindow = lngWindow Or WS_EX_DLGMODALFRAME   'MAX MIN CLOSE SEM BORDA AO REDIMENSIONAR
+'    lngWindow = lngWindow And WS_EX_DLGMODALFRAME
+    SetWindowLong lFrmHdl, GWL_EXSTYLE, lngWindow
+    DrawMenuBar lFrmHdl
 End Sub
 
