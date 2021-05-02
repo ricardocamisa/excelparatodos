@@ -49,6 +49,7 @@ Public Const FOCO_ICONE = &H80
 Public Const ICONE = 0&
 Public Const GRANDE_ICONE = 1&
 
+Private Const WS_EX_DLGMODALFRAME As Long = &H1
 Private Const WS_MINIMIZEBOX As Long = &H20000
 Private Const WS_MAXIMIZEBOX As Long = &H10000
 Public Const WM_NCLBUTTONDOWN = &HA1
@@ -82,15 +83,15 @@ Public Sub removeCaption(objForm As Object)
     'Hide title bar and border around userform
     Dim lngWindow As Long
     Dim lFrmHdl As Long
-    lFrmHdl = FindWindowA(vbNullString, frm.Caption)
+    lFrmHdl = FindWindowA(vbNullString, objForm.Caption)
 '    'Build window and set window until you remove the caption, title bar and frame around the window
     lngWindow = GetWindowLong(lFrmHdl, GWL_STYLE)
     lngWindow = lngWindow Or WS_CAPTION
     SetWindowLong lFrmHdl, GWL_STYLE, lngWindow
-    lngWindow = GetWindowLong(lFrmHdl, GWL_EXSTYLE)
+    lngWindow = GetWindowLong(lFrmHdl, ESTILO_ATUAL)
     lngWindow = lngWindow Or WS_EX_DLGMODALFRAME   'MAX MIN CLOSE SEM BORDA AO REDIMENSIONAR
 '    lngWindow = lngWindow And WS_EX_DLGMODALFRAME
-    SetWindowLong lFrmHdl, GWL_EXSTYLE, lngWindow
+    SetWindowLong lFrmHdl, ESTILO_ATUAL, lngWindow
     DrawMenuBar lFrmHdl
 End Sub
 
