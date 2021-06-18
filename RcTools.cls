@@ -1,0 +1,214 @@
+VERSION 1.0 CLASS
+BEGIN
+  MultiUse = -1  'True
+END
+Attribute VB_Name = "RcTools"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = False
+Attribute VB_PredeclaredId = False
+Attribute VB_Exposed = False
+Option Explicit
+Private Const GWL_EXSTYLE As Long = (-20)
+Private Const WS_EX_DLGMODALFRAME As Long = &H1
+Private Const GWL_STYLE As Long = (-16)
+Private Const WS_CAPTION = 55000000
+Private Const WS_EX_LAYERED = &H80000
+Private Const LWA_COLORKEY = &H1
+Private Const LWA_ALPHA = &H2
+Private Const IDC_HAND = 32649&
+
+Public WithEvents Title As MSForms.Label
+Attribute Title.VB_VarHelpID = -1
+Public WithEvents Subtitle As MSForms.Label
+Attribute Subtitle.VB_VarHelpID = -1
+Public WithEvents iconX  As MSForms.Label
+Public Icon            As MSForms.Image
+
+
+'-----------------------------------------------------------------------------------------------------------
+#If VBA7 Then
+    Private Declare PtrSafe Function SetLayeredWindowAttributes Lib "user32" (ByVal hWnd As Long, ByVal crKey As Long, ByVal bAlpha As Byte, ByVal dwFlags As Long) As Long
+    Private Declare PtrSafe Function GetWindowLong Lib "user32.dll" Alias "GetWindowLongA" (ByVal hWnd As Long, ByVal nIndex As Long) As Long
+    Private Declare PtrSafe Function SetWindowLong Lib "user32" Alias "SetWindowLongA" (ByVal hWnd As Long, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
+    Private Declare PtrSafe Function FindWindow Lib "user32" Alias "FindWindowA" (ByVal lpClassName As String, ByVal lpWindowName As String) As Long
+    Private Declare PtrSafe Function DrawMenuBar Lib "user32" (ByVal hWnd As Long) As Long
+    Private Declare PtrSafe Function FindWindowA Lib "user32" (ByVal lpClassName As String, ByVal lpWindowName As String) As Long
+    Private Declare PtrSafe Function LoadCursorBynum Lib "user32" Alias "LoadCursorA" (ByVal hInstance As Long, ByVal lpCursorName As Long) As Long
+    Private Declare PtrSafe Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
+#Else
+    Private Declare Function SetLayeredWindowAttributes Lib "user32" (ByVal hWnd As Long, ByVal crKey As Long, ByVal bAlpha As Byte, ByVal dwFlags As Long) As Long
+    Private Declare Function GetWindowLong Lib "user32.dll" Alias "GetWindowLongA" (ByVal hWnd As Long, ByVal nIndex As Long) As Long
+    Private Declare Function SetWindowLong Lib "user32" Alias "SetWindowLongA" (ByVal hWnd As Long, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
+    Private Declare Function FindWindow Lib "user32" Alias "FindWindowA" (ByVal lpClassName As String, ByVal lpWindowName As String) As Long
+    Private Declare Function DrawMenuBar Lib "user32" (ByVal hWnd As Long) As Long
+    Private Declare Function FindWindowA Lib "user32" (ByVal lpClassName As String, ByVal lpWindowName As String) As Long
+    Private Declare Function LoadCursorBynum Lib "user32" Alias "LoadCursorA" (ByVal hInstance As Long, ByVal lpCursorName As Long) As Long
+    Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
+#End If
+Private lngPixelsX As Long
+Private lngPixelsY As Long
+Private strThunder As String
+Private blnCreate As Boolean
+Private lnghWnd_Form As Long
+Private lnghWnd_Sub As Long
+Private colBaseCtrl As Collection
+Private Const cstMask As Long = &H7FFFFFFF
+
+
+Public Function MouseCursor(CursorType As Long)
+  Dim lngRet As Long
+  lngRet = LoadCursorBynum(0&, CursorType)
+  lngRet = SetCursor(lngRet)
+End Function
+
+'No evento Ao mover mouse da caixa de texto, digite:
+'=MouseCursor(32649) => altera para formato de mão
+Public Function Maozinha()
+    Call MouseCursor(IDC_HAND)
+End Function
+Sub AlterarUserformTransparente(frm As Object, Optional color As Variant)
+    Dim FormHandle As Long
+    Dim bytOpacity As Byte
+    
+    FormHandle = FindWindow(vbNullString, frm.Caption)
+    If IsMissing(color) Then color = vbWhite
+    bytOpacity = 100
+    SetWindowLong FormHandle, GWL_EXSTYLE, GetWindowLong(FormHandle, GWL_EXSTYLE) Or WS_EX_LAYERED
+    frm.BackColor = color
+    SetLayeredWindowAttributes FormHandle, color, bytOpacity, LWA_COLORKEY
+    
+End Sub
+
+
+Sub removeCaption(frm As Object)
+    Dim lngWindow As Long
+    Dim lFrmHdl As Long
+    lFrmHdl = FindWindowA(vbNullString, frm.Caption)
+    lngWindow = GetWindowLong(lFrmHdl, GWL_STYLE)
+    lngWindow = lngWindow And (Not WS_CAPTION)
+    SetWindowLong lFrmHdl, GWL_STYLE, lngWindow
+    lngWindow = GetWindowLong(lFrmHdl, GWL_EXSTYLE)
+    lngWindow = lngWindow And (Not WS_EX_DLGMODALFRAME)
+    SetWindowLong lFrmHdl, GWL_EXSTYLE, lngWindow
+    DrawMenuBar lFrmHdl
+
+    Dim L As Double
+    Dim A As Double
+    
+    L = Windows.Application.Width
+    A = Windows.Application.Height
+    With frm
+        .Top = (A - A) + .Height - 80
+        .Left = L - .Width - 12
+    End With
+End Sub
+
+Private Sub Class_Initialize()
+    blnCreate = False
+    Set colBaseCtrl = New Collection
+    Call GetLogPixelsXY
+    If (Val(Application.Version) <= 8) Then
+        strThunder = "ThunderXFrame"
+    Else
+        strThunder = "ThunderDFrame"
+    End If
+    
+End Sub
+Private Sub Class_Terminate()
+    Me.Destroy
+End Sub
+
+Public Sub Create(MyForm As Object, varTitle As String, varSubtitle As String, TypeMsg As Long)
+
+'    Set Form = MyForm
+    
+    Set Title = MyForm.Controls.Add("Forms.Label.1", "Title", True)
+    Set Subtitle = MyForm.Controls.Add("Forms.Label.1", "Subtitle", True)
+    Set Icon = MyForm.Controls.Add("Forms.Image.1", "Icon", True)
+    Set iconX = MyForm.Controls.Add("Forms.Label.1", "IconX", True)
+    
+    With Title
+        .Caption = varTitle
+        .Font.Size = 14
+        .Font.Bold = True
+        .ForeColor = vbWhite
+        .Width = 228
+        .Height = 18
+        .Top = 10
+        .Left = 60
+        .BorderStyle = fmBorderStyleNone
+        .BackStyle = fmBackStyleTransparent
+    End With
+   
+    With Subtitle
+        .Caption = varSubtitle
+        .Font.Size = 10
+        .ForeColor = vbWhite
+        .Width = 245
+        .Height = 45
+        .Top = 30
+        .Left = 60
+        .BorderStyle = fmBorderStyleNone
+        .BackStyle = fmBackStyleTransparent
+    End With
+
+    With Icon
+        .Width = 48
+        .Height = 48
+        .Top = 10
+        Select Case TypeMsg
+            Case 1
+            .Picture = ico.ico1.Picture
+            Case 2
+            .Picture = ico.ico2.Picture
+            Case 3
+            .Picture = ico.ico3.Picture
+        End Select
+        .Left = 6
+        .BorderStyle = fmBorderStyleNone
+        .BackStyle = fmBackStyleTransparent
+        .PictureSizeMode = fmPictureSizeModeStretch
+    End With
+
+    With iconX
+        .Font.Name = "Arial Rounded MT Bold"
+        .Font.Bold = True
+        .ForeColor = vbWhite
+        .Font.Size = 14
+        .Caption = "X"
+        .Width = 12
+        .Height = 12
+        .Top = 35
+        .Left = 275
+        .BorderStyle = fmBorderStyleNone
+        .BackStyle = fmBackStyleTransparent
+    End With
+    
+    MyForm.Show
+    
+End Sub
+
+Public Sub Destroy()
+    On Error Resume Next
+    Set colBaseCtrl = Nothing
+    blnCreate = False
+End Sub
+
+Private Sub GetLogPixelsXY()
+    lngPixelsX = Windows.Application.Width
+    lngPixelsY = Windows.Application.Height
+End Sub
+
+Private Sub iconX_Click()
+    On Error Resume Next
+    Unload msg
+End Sub
+
+Private Sub iconX_MouseMove(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
+    iconX.ForeColor = vbRed
+    Call Maozinha
+End Sub
+
+Private Sub Subtitle_MouseMove(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
+    iconX.ForeColor = vbWhite
+End Sub
