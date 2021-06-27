@@ -1,0 +1,284 @@
+'******* AUTHOR: RICARDO CAMISA  ********* _
+email: ricardocamisa@hotmail.com
+'******* COPYRIGHT @ TODOS OS DIREITOS RESERVADOS AO AUTOR DESTE CÓDIGO
+'******* PERMISSÕES: _
+PODE REALIZAR MODIFICAÇÕES E DISTRIBUIR ESTE CÓDIGO, MAS SEMPRE MANTENDO O NOME DO AUTHOR.
+
+
+Public WithEvents Percentil As MSForms.TextBox
+Public WithEvents Datas     As MSForms.TextBox
+Public WithEvents Moedas    As MSForms.TextBox
+Public WithEvents Horas     As MSForms.TextBox
+Public WithEvents Numeros   As MSForms.TextBox
+Public WithEvents Email     As MSForms.TextBox
+Private xFormat()           As New classFormat
+
+
+Public ConverteNumero       As Long
+Public numPonto, numVirgula
+
+Private Sub Email_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
+    Dim EmailSolicitado         As Boolean
+    Dim oReg                    As Object
+
+    'Necessitas habiltar esta referência para tudo funcionar bem
+    'Microsoft VBScript Regular Expressions 1.0
+    Set oReg = New RegExp
+
+    oReg.Pattern = "^([\w\-]+\.)*[\w\- ]+@([\w\- ]+\.)+([\w\-]{2,3})$"
+    EmailSolicitado = oReg.Test(Email.Text)
+
+
+    If KeyCode = 13 Or KeyCode = 9 Then
+        If EmailSolicitado = True Then: Else: MsgBox "Email Inválida!", vbCritical, "Data": Email.Text = "":
+    End If
+End Sub
+
+
+Private Sub Datas_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
+    Dim DataSolicitada      As Boolean
+    Dim oReg                As Object
+    
+    'Necessitas habiltar esta referência para tudo funcionar bem
+    'Microsoft VBScript Regular Expressions 1.0
+    Set oReg = New RegExp
+    
+    oReg.Pattern = "^((0[1-9]|[12]\d)\/(0[1-9]|1[0-2])|30\/(0[13-9]|1[0-2])|31\/(0[13578]|1[02]))\/\d{4}$"
+    DataSolicitada = oReg.Test(Datas.Text)
+   
+   
+    If KeyCode = 13 Or KeyCode = 9 Then
+        If DataSolicitada = True Then: Else: MsgBox "Data Inválida!", vbCritical, "Data": Datas.Text = "": Datas.SetFocus: Exit Sub
+    End If
+End Sub
+
+Private Sub Datas_KeyPress(ByVal KeyAscii As MSForms.ReturnInteger)
+'On Error Resume Next
+    Datas.MaxLength = 10
+    
+  Select Case KeyAscii          ' BackSpace e numericos
+    Case 8                      'Aceita o BACK SPACE
+    Case 13: SendKeys "{TAB}"   'Emula o TAB
+    Case 48 To 57               'Virgula, só permite uma, para separador de decimais
+    If Datas.SelStart = 2 Then Datas.SelText = Chr(47)
+    If Datas.SelStart = 5 Then Datas.SelText = Chr(47)
+    Case 47
+      If InStr(1, Datas.Text, Chr(47), vbTextCompare) >= 2 Then KeyAscii = 0
+    Case Else ' o resto é travado
+        KeyAscii = 0
+  End Select
+Exit Sub
+erro_carregamento:
+End Sub
+
+
+Private Sub Horas_Change()
+    If Len(Horas) = 2 Then
+        Horas.Value = Horas.Value & ":"
+    ElseIf Len(Horas) = 5 Then
+        Horas.Value = Horas.Value & ":"
+    End If
+End Sub
+
+Private Sub Horas_KeyPress(ByVal KeyAscii As MSForms.ReturnInteger)
+On Error Resume Next
+    Select Case KeyAscii
+      ' BackSpace e numericos
+      Case 8, 48 To 57
+      ' Virgula, só permite uma, para separador de decimais
+      Case 44
+        If InStr(1, Moedas.Text, Chr(44), vbTextCompare) > 1 Then KeyAscii = 0
+      Case Else ' o resto é travado
+          KeyAscii = 0
+    End Select
+    
+    Dim valorhoras, hora, minuto, segundo As Long
+    
+    If Len(Horas) = 1 And Mid(Horas.Value, 1, 1) > 2 Then
+        valorhoras = Mid(Horas.Value, 1, 1)
+        Horas.Value = 0 & valorhoras & ":"
+    ElseIf Len(Horas) = 4 And Mid(Horas.Value, 4, 1) > 5 Then
+        hora = Mid(Horas.Value, 1, 2)
+        valorhoras = hora & ":" & 0 & Mid(Horas.Value, 4, 1)
+        Horas.Value = valorhoras
+    ElseIf Len(Horas) = 7 And Mid(Horas.Value, 7, 1) > 5 Then
+        hora = Mid(Horas.Value, 1, 2)
+        minuto = Mid(Horas.Value, 4, 2)
+        segundo = Mid(Horas.Value, 7, 1)
+        valorhoras = hora & ":" & minuto & ":" & 0 & segundo
+        Horas.Value = valorhoras
+    ElseIf Horas.Value <> "" And Mid(Horas.Value, 1, 2) >= 24 Then
+        Horas.Value = "23:59:59"
+    End If
+    
+    Horas.MaxLength = 8
+    
+End Sub
+
+Private Sub Moedas_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
+    If KeyCode = 13 Or KeyCode = 9 Then
+        Moedas = Format(Moedas, "#,##0.00")
+        If Moedas.Value = "" Then: Moedas.Value = Format(0, "#,##0.00"): Else: Moedas.Value = Format(Moedas, "#,##0.00")
+    End If
+    
+End Sub
+
+Private Sub Moedas_KeyPress(ByVal KeyAscii As MSForms.ReturnInteger)
+'On Error Resume Next
+  Select Case KeyAscii
+    ' BackSpace e numericos
+    Case 8, 48 To 57
+    ' Virgula, só permite uma, para separador de decimais
+    Case 44
+      If InStr(1, Moedas.Text, Chr(44), vbTextCompare) > 1 Then KeyAscii = 0
+    Case Else ' o resto é travado
+        KeyAscii = 0
+  End Select
+Exit Sub
+erro_carregamento:
+End Sub
+Private Sub Numeros_KeyPress(ByVal KeyAscii As MSForms.ReturnInteger)
+'On Error Resume Next
+  Select Case KeyAscii
+    ' BackSpace e numericos
+    Case 8, 48 To 57
+    ' Virgula, só permite uma, para separador de decimais
+    Case 44
+      If InStr(1, Numeros.Text, Chr(44), vbTextCompare) > 1 Then KeyAscii = 0
+    Case Else ' o resto é travado
+        KeyAscii = 0
+  End Select
+Exit Sub
+erro_carregamento:
+End Sub
+
+Private Sub Percentil_Change()
+Call FormatarPercentagens
+End Sub
+
+Private Sub Percentil_Exit(ByVal Cancel As MSForms.ReturnBoolean)
+On Error Resume Next
+Percentil = Format(Percentil.Value / 100, "0.0%")
+End Sub
+
+Public Sub FormatarMoedas()
+
+    valor = Moedas.Value
+    
+    If IsNumeric(valor) Then
+        If InStr(1, valor, "-") >= 1 Then valor = Replace(valor, "-", "")
+        If InStr(1, valor, ",") >= 1 Then valor = CDbl(Replace(valor, ",", ""))
+        If InStr(1, valor, ".") >= 1 Then valor = Replace(valor, ".", "")
+    Else
+        Exit Sub
+    End If
+    
+    Select Case Len(valor)
+        Case 1
+            numPonto = "00" & valor
+        Case 2
+            numPonto = "0" & valor
+        Case 6 To 8
+            numPonto = Left(valor, Len(valor)) & "." & Right(valor, 5)
+        Case 9 To 14
+            numPonto = inseriPonto(12, valor)
+        Case 9 To 11
+            numPonto = inseriPonto(8, valor)
+        Case 12 To 14
+            numPonto = inseriPonto(8, valor)
+        Case 13 To 14
+            numPonto = inseriPonto(11, valor)
+'1.000.000,00
+        Case Else
+            numPonto = valor
+    End Select
+    numVirgula = Left(numPonto, Len(numPonto) - 2) & "," & Right(numPonto, 2)
+    Moedas.Value = numVirgula
+End Sub
+
+Public Sub FormatarPercentagens()
+Percentil.MaxLength = 6
+
+    valor = Percentil.Value
+    
+    If IsNumeric(valor) Then
+        If InStr(1, valor, "-") >= 1 Then valor = Replace(valor, "-", "")
+        If InStr(1, valor, ",") >= 1 Then valor = CDbl(Replace(valor, ",", ""))
+        If InStr(1, valor, ".") >= 1 Then valor = Replace(valor, ".", "")
+    Else
+        Exit Sub
+    End If
+    
+    Select Case Len(valor)
+        Case 1
+            numPonto = "0" & valor
+        Case 2
+            numPonto = "0" & valor
+        Case Else
+            numPonto = valor
+    End Select
+    Percentil = Left(numPonto, Len(numPonto) - 2) & "," & Right(numPonto, 2)
+End Sub
+
+Function inseriPonto(inicio, valor)
+    Dim M1, M2, F, i
+    i = Left(valor, Len(valor) - inicio)
+    M1 = Left(Right(valor, inicio), 3)
+    M2 = Left(Right(valor, 8), 3)
+    F = Right(valor, 5)
+    
+    If (M2 = M1) And (Len(valor) < 12) Then
+        inseriPonto = i & "." & M1 & "." & F
+    Else
+        inseriPonto = i & "." & M1 & "." & M2 & "." & F
+    End If
+End Function
+
+Private Sub Percentil_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
+On Error Resume Next
+    If KeyCode = 13 Or KeyCode = 9 Then
+        Percentil = Format(Percentil.Value / 100, "0.00%")
+    End If
+End Sub
+
+Private Sub Percentil_KeyPress(ByVal KeyAscii As MSForms.ReturnInteger)
+'On Error Resume Next
+  Select Case KeyAscii
+    ' BackSpace e numericos
+    Case 8, 48 To 57
+    ' Virgula, só permite uma, para separador de decimais
+    Case 44
+      If InStr(1, Percentil.Text, Chr(44), vbTextCompare) > 1 Then KeyAscii = 0
+    Case Else ' o resto é travado
+        KeyAscii = 0
+  End Select
+Exit Sub
+erro_carregamento:
+End Sub
+
+Public Function Formatacao(objForm As Object)
+
+    Dim cont, i As Integer
+    
+    cont = objForm.Controls.Count - 1
+    
+    ReDim xFormat(0 To cont)
+        
+    For i = 0 To cont
+        Select Case objForm.Controls(i).Tag
+            Case Is = "Percentagem"
+                Set xFormat(i).Percentil = objForm.Controls(i)
+            Case Is = "Data"
+                Set xFormat(i).Datas = objForm.Controls(i)
+            Case Is = "Moeda"
+                Set xFormat(i).Moedas = objForm.Controls(i)
+            Case Is = "Hora"
+                Set xFormat(i).Horas = objForm.Controls(i)
+            Case Is = "Numero"
+                Set xFormat(i).Numeros = objForm.Controls(i)
+            Case Is = "Email"
+                Set xFormat(i).Email = objForm.Controls(i)
+        End Select
+    Next
+    
+End Function
